@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #define BASE_NUMBERS (const char[32]){'!','@','#','$','%','^','&','*','<','>','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v'}
-#define BASE_ACTIONS (const char*[16]){"mov","cmp","add","sub","not","clr","lea","inc","dec","jmp","bne","get","prn","jsr","rts","hlt"}
+#define OPCODE (const char*[16]){"mov","cmp","add","sub","not","clr","lea","inc","dec","jmp","bne","get","prn","jsr","rts","hlt"}
 #define CODING_TYPE(x,y) ((x)==0 && (y)==0 ? 'A' : ((x)==0 && (y)==1 ? 'E' : ((x)==1 && (y)==0 ? 'R' : 'N')))
 #define GET_INDEX(x)\
           for (int i = 0; i < 32; i++) { \
@@ -10,7 +10,7 @@
 
 #define CREATE_BINARY_NUMBER(x,y,z,w) ((x)*1000+(y)*100+(z)*10+(w))
 
-#define GET_ACTION(index) BASE_ACTIONS[(index)]
+#define GET_ACTION(index) OPCODE[(index)]
 
 int convert(long long);
 int get_index(int i);
@@ -31,7 +31,7 @@ int convert(long long n) {
 //int get_index(int n) {
 //	int index = -1;
 //	for (int i = 0; i < 32; i++) {
-//		if (n == BASE_ACTIONS[i]) {
+//		if (n == OPCODE[i]) {
 //			index = i;
 //			break;
 //		}

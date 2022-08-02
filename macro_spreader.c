@@ -7,36 +7,34 @@
 #include <string.h>
 #include <ctype.h>
 #include "utils/index.h"
+#include "utils/static_data.h"
+#include "./utils.h"
 #define LINE_LENGTH 80
-#define OPCODE (const char*[16]){"mov","cmp","add","sub","not","clr","lea","inc","dec","jmp","bne","get","prn","jsr","rts","hlt"}
+//#define OPCODE (const char*[16]){"mov","cmp","add","sub","not","clr","lea","inc","dec","jmp","bne","get","prn","jsr","rts","hlt"}
 
 typedef struct Macro {
 	char macro_name[10];
 	struct Macro* next;
-	int start_bytes;
+	char macro_data[240];
 } Macro;
 
-FILE* create_spread_macro_file(char*);
+char* create_spread_macro_file(char*);
 char* spread_macro(FILE*, char*); // Returns a new file pointer where macroes embedded into the text
 
-Macro* create_macro(char*, int); // Creates a new macro struct whitch contains name bytes and next pointer (to Null)
+Macro* create_macro(char*); // Creates a new macro struct whitch contains name bytes and next pointer (to Null)
 Macro* add_macro(Macro*, Macro*); // Add the given macro to the start as the head of the list and return it
 
 char* get_macro(char*, Macro*); // Returns the macro as a string if exist (and exit if not found)
-char* concat(const char*, const char*);
 
-void error_handeling(char*); // Prints the given error and exit the program
 void printList(Macro*); // Prints the list for testing purposes
 void free_list(Macro*);
 
 int is_opcode(char*); // Return true (1) if there is opcode with that name
 
-FILE* create_spread_macro_file(char* file_name) {
+char* create_spread_macro_file(char* file_name) {
 	FILE* file_ptr;
 	file_ptr = fopen(file_name, "r");
-	if (file_ptr == NULL) {
-		error_handeling("\nfile cannot be opened\n");
-	}
+	isFilePtrNullish(file_ptr);
 	return spread_macro(file_ptr, file_name);
 }
 
@@ -46,8 +44,9 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 {
 	Macro* head = NULL;
 	Macro* macro_node = NULL;
-	char* new_file_name = concat("spread_", file_name);
-	FILE* new_fp = fopen(new_file_name, "wt");
+	char* new_file_name = replace_file_name_ending(file_name, "_AM.txt"); // TODO 5 - For debugpurposes should be .am 
+	FILE* new_fp = fopen(new_file_name, "a+");
+	isFilePtrNullish(new_fp);
 	int macro = 0;
 	int start_bytes;
 	char* macro_name;
@@ -66,16 +65,17 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 				continue;
 			}
 			else {
+				strcpy(head->macro_data,concat(head->macro_data, copied_line));
 				continue;
 			}
 		}
 
-		first_word = strtok(copied_line, " \n");
+		first_word = strtok(copied_line, " \n\t");
 
 		if (strcmp(first_word, "macro") == 0) {
 			macro_name = strtok(NULL, " \n");
-			start_bytes = ftell(file_ptr) + 1;
-			macro_node = create_macro(macro_name, start_bytes);
+			//start_bytes = ftell(file_ptr) + 1;
+			macro_node = create_macro(macro_name);
 			head = add_macro(head, macro_node);
 			macro = 1;
 		}
@@ -108,16 +108,16 @@ int is_opcode(char* name) {
 	return 0;
 }
 
-Macro* create_macro(char* name, int bytes) {
+Macro* create_macro(char* name) {
 	Macro* new_macro = (Macro*)malloc(sizeof(Macro));
 	if (new_macro != NULL) {
 		strcpy(new_macro->macro_name, name);
-		new_macro->start_bytes = bytes;
+		strcpy(new_macro->macro_data, "");
 		//new_macro->prev = node;
 		new_macro->next = NULL;
 	}
 	else
-		error_handeling("mamory allocation problem");
+		error_handler("mamory allocation problem");
 
 	return new_macro;
 }
@@ -126,11 +126,6 @@ Macro* add_macro(Macro* head, Macro* macro_node) {
 
 	macro_node->next = head;
 	return macro_node;
-}
-
-void error_handeling(char* str) {
-	printf("%s\n", str);
-	exit(0);
 }
 
 char* get_macro(char* name, Macro* head) {
@@ -142,10 +137,10 @@ char* get_macro(char* name, Macro* head) {
 	}
 
 	if (!temp_head) {
-		error_handeling("Syntax error: ");
+		error_handler("Syntax error: ");
 	}
 
-	return "get_macro_lines\n"; // TODO 5 - Change it to the proper value.
+	return temp_head->macro_data;
 }
 
 
@@ -163,16 +158,7 @@ void printList(Macro* head) { // To test the list structs
 	while (head != NULL)
 	{
 		printf("%s ", head->macro_name);
-		printf("%d\n", head->start_bytes);
+		printf("%s\n", head->macro_data);
 		head = head->next;
 	}
-}
-
-char* concat(const char* s1, const char* s2)
-{
-	char* result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
-	// in real code you would check for errors in malloc here
-	strcpy(result, s1);
-	strcat(result, s2);
-	return result;
 }
