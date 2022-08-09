@@ -1,48 +1,25 @@
 #include <stdio.h>
 #include <math.h>
 #define BASE_NUMBERS (const char[32]){'!','@','#','$','%','^','&','*','<','>','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v'}
+//#define BINARY_BASE_NUMBERS (const char[32]){"00000","00001","00010","00011","00100","00101","00110","00111","01000","01001","01010","01011","01100","01101","01110","01111","10000","10001","10010","10011","10100","10101","10110","10111","11000","11001","11010","11011","11100","11101","11110","11111"}
 #define OPCODE (const char*[16]){"mov","cmp","add","sub","not","clr","lea","inc","dec","jmp","bne","get","prn","jsr","rts","hlt"}
+#define BINARY_OPCODE (const char*[16]){"0000","0001","0010","0011","0100","0101","0110","0111","1000","1001","1010","1011","1100","1101","1110","1111"}
 #define CODING_TYPE(x,y) ((x)==0 && (y)==0 ? 'A' : ((x)==0 && (y)==1 ? 'E' : ((x)==1 && (y)==0 ? 'R' : 'N')))
-#define GET_INDEX(x)\
-          for (int i = 0; i < 32; i++) { \
-            if((x) == BASE_NUMBERS[i]) return i\
-          }
 
-#define CREATE_BINARY_NUMBER(x,y,z,w) ((x)*1000+(y)*100+(z)*10+(w))
+typedef struct node *opPtr;
+typedef struct node {
+	char* opcode;
+	char* bin;
+	opPtr next;
+} opcode_st;
+/*
+typedef struct node *base32Ptr;
+typedef struct node {
+	char* num;
+	char* bin;
+	base32Ptr next;
+} base32_st;
+*/
 
-#define GET_ACTION(index) OPCODE[(index)]
-
-int convert(long long);
-int get_index(int i);
-
-int convert(long long n) {
-	int dec = 0, i = 0, rem;
-
-	while (n != 0) {
-		rem = n % 10;
-		n /= 10;
-		dec += rem * pow(2, i);
-		++i;
-	}
-
-	return dec;
-}
-
-//int get_index(int n) {
-//	int index = -1;
-//	for (int i = 0; i < 32; i++) {
-//		if (n == OPCODE[i]) {
-//			index = i;
-//			break;
-//		}
-//	}
-//
-//	if (index > -1) {
-//		printf("Index : %d\n", index);
-//	}
-//	else {
-//		printf("%d is not present in this array.\n", n);
-//		return 0;
-//	}
-//	return index;
-//}
+opPtr init_op_code_list();
+//base32Ptr init_base32_list();

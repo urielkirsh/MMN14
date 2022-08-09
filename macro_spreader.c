@@ -9,27 +9,10 @@
 #include "utils/index.h"
 #include "utils/static_data.h"
 #include "./utils.h"
+#include "./macro_spreader.h"
 #define LINE_LENGTH 80
-//#define OPCODE (const char*[16]){"mov","cmp","add","sub","not","clr","lea","inc","dec","jmp","bne","get","prn","jsr","rts","hlt"}
 
-typedef struct Macro {
-	char macro_name[10];
-	struct Macro* next;
-	char macro_data[240];
-} Macro;
 
-char* create_spread_macro_file(char*);
-char* spread_macro(FILE*, char*); // Returns a new file pointer where macroes embedded into the text
-
-Macro* create_macro(char*); // Creates a new macro struct whitch contains name bytes and next pointer (to Null)
-Macro* add_macro(Macro*, Macro*); // Add the given macro to the start as the head of the list and return it
-
-char* get_macro(char*, Macro*); // Returns the macro as a string if exist (and exit if not found)
-
-void printList(Macro*); // Prints the list for testing purposes
-void free_list(Macro*);
-
-int is_opcode(char*); // Return true (1) if there is opcode with that name
 
 char* create_spread_macro_file(char* file_name) {
 	FILE* file_ptr;
@@ -48,7 +31,6 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 	FILE* new_fp = fopen(new_file_name, "a+");
 	isFilePtrNullish(new_fp);
 	int macro = 0;
-	int start_bytes;
 	char* macro_name;
 	char* first_word;
 	char* str_to_put = (char*)malloc(sizeof(char) * LINE_LENGTH);
@@ -74,7 +56,6 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 
 		if (strcmp(first_word, "macro") == 0) {
 			macro_name = strtok(NULL, " \n");
-			//start_bytes = ftell(file_ptr) + 1;
 			macro_node = create_macro(macro_name);
 			head = add_macro(head, macro_node);
 			macro = 1;
@@ -113,7 +94,6 @@ Macro* create_macro(char* name) {
 	if (new_macro != NULL) {
 		strcpy(new_macro->macro_name, name);
 		strcpy(new_macro->macro_data, "");
-		//new_macro->prev = node;
 		new_macro->next = NULL;
 	}
 	else

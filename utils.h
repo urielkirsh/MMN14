@@ -7,7 +7,10 @@ void error_handler(char* str); // Prints the given error and exit the program
 void write_error_to_file(FILE* file_pt, char* str);
 char* concat(const char*, const char*);
 char* replace_file_name_ending(char*, char*);
-bool isLable(char*);
+bool is_lable(char*);
+char* convert_dec_to_bin(int); // Gets a decimal number and return string of binary number (base 8)
+char* convert_bin_to_32b(char*); // Gets a binary number and return string of 32base number (base 32)
+int convert_bin_to_dec(int);// Gets a binary number and return int of decimal number (base 10)
 
 // TODO 5 - Add func to check if a verible name is forbidded (opcode/registers...) is_valid_name()
 // TODO 5 - Add func to check if a number is valid should be integer is_valid_number()

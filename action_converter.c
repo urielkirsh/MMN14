@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_DEPRECATE
+#pragma warning(suppress : 6387)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -15,8 +18,8 @@ typedef struct node {
 
 int write_binary_actions(char*, FILE*);
 char* action_converter(char*);
-void add_lable_to_table(int, char*);
-lablePtr addFront(lablePtr, lablePtr);
+void add_lable_to_table(int, char*, lablePtr);
+lablePtr add_front(lablePtr, lablePtr);
 lablePtr create_new_lable(int, char*);
 
 
@@ -29,7 +32,7 @@ char* action_converter(char* file_name) {
 	char original_line[LINE_LENGTH];
 	char copied_line[LINE_LENGTH];
 	char* first_word;
-	char* current_lable;
+	//char* current_lable;
 	int line_counter = 100;
 	bool is_inside_of_lable = false;
 	bool is_lable_word = false;
@@ -38,8 +41,8 @@ char* action_converter(char* file_name) {
 	while (fgets(original_line, LINE_LENGTH, file_ptr) != NULL) {
 
 		strcpy(copied_line, original_line);
-		char* first_word = strtok(copied_line, " \n\t");
-		is_lable_word = isLable(first_word);
+		first_word = strtok(copied_line, " \n\t");
+		is_lable_word = is_lable(first_word);
 		if (is_inside_of_lable && !is_lable_word) {
 			line_counter += write_binary_actions(original_line, new_fp);
 			continue;

@@ -102,11 +102,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="action_converter.c" />
+    <ClCompile Include="init.c" />
     <ClCompile Include="macro_spreader.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="macro_spreader.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="utils\index.h" />
     <ClInclude Include="utils\static_data.h" />
