@@ -66,24 +66,19 @@ char* convert_dec_to_bin(int dec) {
 	printf("%s", binStr);
 	return binStr;
 }
-
-char* convert_bin_to_32b(char* bin) {
-	if (strlen(bin) < 10) {
-		printf("Not enough characters");
+// Convert from dec or hex to 32b (TODO 3 - Rename the name is misleading)
+char* convert_bin_to_32b(char* bin, int base) {
+	if (strlen(bin) < base) {
+		printf("Not enough characters for 32b number");
 		exit(0);
 	}
-	char first_bin_str[5];
-	char second_bin_str[5];
-	int i = 0;
-	int j = 0;
-	for (i; i < 10; i++) {
-		if (i > 4) {
-			second_bin_str[j] = bin[i];
-			j++;
-		}
-		first_bin_str[i] = bin[i];
-	}
-	// TODO 4 - Move to func or better solution
+	int string_length = (base == 8) ? 4 : 5;
+	int string_cutter = (base == 8) ? 3 : 4;
+	char* first_bin_str = (char*)malloc(sizeof(char) * (string_length+1));
+	char* second_bin_str = (char*)malloc(sizeof(char) * (string_length+1));
+
+	create_binary_string(first_bin_str, bin, 0, 0, 0, string_cutter); // Take the first part of the string (e.g "0000110000" -> "00001")
+	create_binary_string(second_bin_str, bin, string_length, 0, 0, base); // Take the second part of the string (e.g "0000110000" -> "10000")
 
 	int first_bin = convert_bin_to_dec(atoi(first_bin_str));
 	int second_bin = convert_bin_to_dec(atoi(second_bin_str));
@@ -92,8 +87,24 @@ char* convert_bin_to_32b(char* bin) {
 	char base32_num[2];
 	base32_num[0] = first_32base;
 	base32_num[1] = second_32base;
-
+	printf("%c", base32_num[0]);
+	free(first_bin_str);
+	free(second_bin_str);
 	return base32_num;
+}
+
+char* create_binary_string(char* str, char* bin, int i, int j, int flag, int len) {
+	for (i; i <= len; i++) {
+		if (bin[i] == '1' && flag == 0) {
+			flag = 1;
+		}
+		if (flag == 1) {
+			str[j] = bin[i];
+			j++;
+		}
+	}
+	str[len + 1] = '/0';
+	return str;
 }
 
 int convert_bin_to_dec(int num) {
