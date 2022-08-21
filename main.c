@@ -17,8 +17,10 @@ int main(int argc, char* argv[]) // argc = num of strings (file names), argv = t
 	char* file_name_to_render;
 	for (i = 1; i < 2; i++) {/*argc*/
 		// TODO 5 - Create array of pointers to the new files
-		file_name_to_render = create_spread_macro_file("./file_test.txt"); // TODO 5 - How many files will be created here? /*argv[i]*/
+		char* file_name = strdup("./file_test.txt");
+		file_name_to_render = create_spread_macro_file(file_name); // TODO 5 - How many files will be created here? /*argv[i]*/
 		file_name_to_render = action_converter(file_name_to_render); // First run
+		free(file_name);
 	}
 
 	return 0;

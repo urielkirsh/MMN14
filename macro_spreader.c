@@ -39,6 +39,8 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 
 	while (fgets(original_line, LINE_LENGTH, file_ptr) != NULL) {
 
+		if (original_line[0] == ';') continue; // Ignore comment out lines
+
 		strcpy(copied_line, original_line);
 
 		if (macro) {
@@ -53,6 +55,7 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 		}
 
 		first_word = strtok(copied_line, " \n\t");
+
 
 		if (strcmp(first_word, "macro") == 0) {
 			macro_name = strtok(NULL, " \n");
@@ -77,16 +80,6 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 	fclose(new_fp);
 	fclose(file_ptr);
 	return new_file_name;
-}
-
-
-int is_opcode(char* name) {
-	int i;
-	for (i = 0; i < 16; i++) {
-		if (strcmp(name, OPCODE[i]) == 0)
-			return 1;
-	}
-	return 0;
 }
 
 Macro* create_macro(char* name) {

@@ -17,5 +17,3 @@ char* get_macro(char*, Macro*); // Returns the macro as a string if exist (and e
 
 void printList(Macro*); // Prints the list for testing purposes
 void free_list(Macro*);
-
-int is_opcode(char*); // Return true (1) if there is opcode with that name

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include "./utils.h"
 #include "./utils/static_data.h"
 
@@ -19,14 +20,18 @@ void error_handler(char* str) {
 	exit(0);
 }
 
-void write_error_to_file(FILE* error_file_pt, char* error) {
-	fprintf(error_file_pt, "%s\n", error);
+void write_error_to_file(char* error) {
+	FILE* err_file_ptr;
+	if (!err_file_ptr) {
+		err_file_ptr = fopen("error_file", "a+");
+	}
+	fprintf(err_file_ptr, "%s\n", error);
 }
 
 char* concat(const char* s1, const char* s2)
 {
 	char* result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
-	// in real code you would check for errors in malloc here
+	if (result == NULL) { error_handler("Allocating problem"); }
 	strcpy(result, s1);
 	strcat(result, s2);
 	return result;
@@ -46,7 +51,7 @@ bool is_lable(char* word) {
 	return false;
 }
 
-char* convert_dec_to_bin(int dec) {
+char* convert_dec_to_bin(int dec, bool negative) {
 	
 	// array to store binary number
 	char binaryNum[8] = {'0','0','0','0','0','0','0','0'};
@@ -60,20 +65,25 @@ char* convert_dec_to_bin(int dec) {
 		dec = dec / 2;
 		i--;
 	}
+	if (negative) {
+		for (i = 0; i < 10; i++) {
+			binaryNum[i] = (binaryNum[i] == '0') ? '1' : '0';
+		}
+	}
 	char binStr[10];
 	memcpy(binStr, binaryNum, x);
 	binStr[x] = '\0';
-	printf("%s", binStr);
+
 	return binStr;
 }
-// Convert from dec or hex to 32b (TODO 3 - Rename the name is misleading)
-char* convert_bin_to_32b(char* bin, int base) {
+// Convert from dec to 32b
+char* convert_dec_to_32b(char* bin, int base) {
 	if (strlen(bin) < base) {
 		printf("Not enough characters for 32b number");
 		exit(0);
 	}
-	int string_length = (base == 8) ? 4 : 5;
-	int string_cutter = (base == 8) ? 3 : 4;
+	int string_length = 5;
+	int string_cutter = 4;
 	char* first_bin_str = (char*)malloc(sizeof(char) * (string_length+1));
 	char* second_bin_str = (char*)malloc(sizeof(char) * (string_length+1));
 
@@ -87,7 +97,6 @@ char* convert_bin_to_32b(char* bin, int base) {
 	char base32_num[2];
 	base32_num[0] = first_32base;
 	base32_num[1] = second_32base;
-	printf("%c", base32_num[0]);
 	free(first_bin_str);
 	free(second_bin_str);
 	return base32_num;
@@ -121,3 +130,91 @@ int convert_bin_to_dec(int num) {
 
 	return decimal_num;
 }
+
+bool is_reg(char* word) {
+	int i = 0;
+	bool is_register = false;
+	for (i; i < 9; i++) {
+		if (strcmp(RGISTERS[i], word) == 0) {
+			is_register = true;
+		}
+	}
+	return is_register;
+}
+
+bool is_integer(double val)
+{
+	int truncated = (int)val;
+	return (val == truncated);
+}
+
+int get_num_of_op_by_operation(char* op) {
+	int i;
+	int num_of_op = 0;
+	for (i = 0; i < 9; i++) {
+		if (strcmp(op, ONE_OPERANDS_ARR[i]) == 0) {
+			num_of_op = 1;
+		}
+	}
+	if (num_of_op == 0) {
+		for (i = 0; i < 5; i++) {
+			if (strcmp(op, TWO_OPERANDS_ARR[i]) == 0) {
+				num_of_op = 2;
+			}
+		}
+	}
+	return num_of_op;
+}
+
+bool is_lable_name(char* name) {
+	char first_letter = name[0];
+	return (first_letter == toupper(first_letter));
+}
+
+bool is_opcode(char* name) {
+	bool opcode = false;
+	for (int i = 0; i < 16; i++) {
+		if (strcmp(name, OPCODE[i]) == 0) {
+			opcode = true;
+		}
+	}
+	return opcode;
+}
+
+bool is_saved_words(char* verible_name) {
+	bool saved_word = false;
+	for (int i = 0; i < 5; i++) {
+		if (strcmp(verible_name, SAVED_WORDS[i]) == 0) {
+			saved_word = true;
+		}
+	}
+	return saved_word;
+}
+
+bool is_valid_name(char* verible_name) {
+	return (!is_reg(verible_name)) && (!is_opcode(verible_name)) && (!is_saved_words(verible_name));
+}
+
+bool is_valid_number(char* num) {
+	int f = 0;
+	for (int i = 0; num[i] != 0; i++) {
+		if (num[i] == '.') {
+			f = 1;
+			break;
+		}
+	}
+
+	if (f)
+		return false;
+	
+	return true;
+}
+
+bool is_entry(char* first_word) {
+	return (first_word == ".entry") ? true : false;
+}
+
+bool is_extern(char* first_word) {
+	return (first_word == ".extern") ? true : false;
+}
+
