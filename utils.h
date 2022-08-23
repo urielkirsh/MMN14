@@ -18,12 +18,11 @@ bool is_reg(char*);
 bool is_integer(double);
 int get_num_of_op_by_operation(char*);
 
-// TODO 5 - Add func to check if a verible name is forbidded (opcode/registers...) is_valid_name()
-bool is_valid_name(char*);
-// TODO 5 - Add func to check if a number is valid should be integer is_valid_number()
-bool is_valid_number(char*);
+bool is_valid_name(char*); // Check if a verible name is forbidded (opcode/registers...)
+bool is_valid_number(char*); //Checks if a number is valid should be integer
 bool is_opcode(char*);
 bool is_saved_words(char*);
 bool is_entry(char*);
 bool is_extern(char*);
+char* get_binary_reg(char*);
 

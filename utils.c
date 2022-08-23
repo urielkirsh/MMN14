@@ -21,11 +21,9 @@ void error_handler(char* str) {
 }
 
 void write_error_to_file(char* error) {
-	FILE* err_file_ptr;
-	if (!err_file_ptr) {
-		err_file_ptr = fopen("error_file", "a+");
-	}
+	FILE* err_file_ptr = fopen("error_file", "a+");
 	fprintf(err_file_ptr, "%s\n", error);
+	fclose(err_file_ptr);
 }
 
 char* concat(const char* s1, const char* s2)
@@ -66,15 +64,15 @@ char* convert_dec_to_bin(int dec, bool negative) {
 		i--;
 	}
 	if (negative) {
-		for (i = 0; i < 10; i++) {
+		for (i = 0; i < 8; i++) {
 			binaryNum[i] = (binaryNum[i] == '0') ? '1' : '0';
 		}
 	}
-	char binStr[10];
-	memcpy(binStr, binaryNum, x);
+	char binStr[9];
+	strncpy(binStr, binaryNum, x);
 	binStr[x] = '\0';
-
-	return binStr;
+	char* bin_str_to_return = binStr;
+	return bin_str_to_return;
 }
 // Convert from dec to 32b
 char* convert_dec_to_32b(char* bin, int base) {
@@ -216,5 +214,16 @@ bool is_entry(char* first_word) {
 
 bool is_extern(char* first_word) {
 	return (first_word == ".extern") ? true : false;
+}
+
+char* get_binary_reg(char* reg) {
+	int i = 0;
+	int dec_num;
+	for (i = 0; i < 9; i++) {
+		if (strcmp(reg, RGISTERS[i]) == 0) {
+			dec_num = i;
+		}
+	}
+	return BINARY_OPCODE[dec_num]; // Use the binary opcode cause its the same (4 digits)
 }
 
