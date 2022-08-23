@@ -54,11 +54,8 @@ void add_struct_to_data(char*);
 char* get_binary_opcode(char*, opPtr);
 char* get_binary_operand(char*);
 char* build_binary_word(char*, int, char*);
-void handle_op(char*, char*, bool is_source);
-void handle_reg_operand(char* operand, bool is_source);
-void handle_struct_operand(char* operand);
-void handle_put_operand(char* operand);
-void handle_lable_operand(char* operand);
+char* handle_source_op(char*);
+void handle_des_op(char*);
 void init_arrays();
 void free_arrays();
 
@@ -141,15 +138,10 @@ char* action_converter(char* file_name) {
 }
 
 int write_binary_actions(char* line, FILE* new_fp, opPtr opcode_header) {
-	char copied_line[LINE_LENGTH];
-	strcpy(copied_line, line);
-	int line_of_binary_actions = IC + DC; // Count the binary lines converted from the original line
+	int line_of_binary_actions = 0; // Count the binary lines converted from the original line
 	char* operation = strtok(line, " \t\n"); // Get the op code
 	if (operation[strlen(operation) - 1] == ':') { // If this is the first time skip the lable
 		operation = strtok(NULL, " ");
-	}
-	if (operation[0] == '.' && is_put_action(operation, copied_line)) {
-		return (IC + DC) - line_of_binary_actions;
 	}
 	int num_of_op = get_num_of_op_by_operation(operation);
 	char* source_op;
@@ -162,20 +154,13 @@ int write_binary_actions(char* line, FILE* new_fp, opPtr opcode_header) {
 		destination_op = strtok(NULL, ", \t\n");
 		binary_source_op = get_binary_operand(source_op);
 		binary_destination_op = get_binary_operand(destination_op);
-		bool is_both_regs = (binary_source_op == "11" && binary_destination_op == "11");
-		if (is_both_regs) {
-			IC++;
-			I_Array[IC] = strcat(concat(get_binary_reg(source_op), get_binary_reg(destination_op)), "00"); // Add the two regs to the binary num
-		}
-		else {
-			handle_op(source_op, binary_source_op, true);
-			handle_op(destination_op, binary_destination_op, false);
-		}
+		handle_source_op(source_op);
+		handle_des_op(destination_op);
 	}
 	else if (num_of_op == 1) {
 		destination_op = strtok(NULL, " \t\n");
 		binary_destination_op = get_binary_operand(destination_op);
-		handle_op(destination_op, binary_destination_op, false);
+		handle_des_op(destination_op);
 	}
 	char* binary_words[3] = { binary_opcode, binary_source_op, binary_destination_op };
 	char* first_binary_word = build_binary_word(binary_words, 3, "00"); // Array of words, num of words, the ARE data
@@ -185,7 +170,7 @@ int write_binary_actions(char* line, FILE* new_fp, opPtr opcode_header) {
 	//strcpy(binary_word ,get_binary_word(operation));
 	//fprintf(new_fp, "%s", binary_word);
 	
-	return (IC + DC) - line_of_binary_actions;
+	return line_of_binary_actions;
 }
 
 char* build_binary_word(char* words[], int size, char* A_R_E) {
@@ -223,63 +208,40 @@ char* get_binary_opcode (char* operation, opPtr opcode_header) {
 	return "";
 }
 
-// Kind of factory pattern to choose what to do with the operand
-void handle_op(char* operand, char* bin_op, bool is_source) {
+char* handle_source_op(char* operand) {
 	if (!operand) { error_handler("oops something went wrong! (handle_source_op)"); }
-	if (strcmp(bin_op, "10") == 0) {
-		handle_struct_operand(operand);
+	if (is_lable_name(operand)) {
+		char* struct_lable = strtok(operand, ".");
+		if (struct_lable) {
+			char* num = strtok(NULL, ".");
+			if (num[0] < '1' || num[0] > '2') {
+				error_handler("The struct places has only 1 and 2");
+			}
+			// IC++
+			// i_Array[IC] = struct lable address + ARE check entry or external
+			// IC++
+			// i_Array[IC] = number + "00"
+		}
+		else if (is_reg(operand)) {
+			// IC++
+			// i_Array[IC] = bin reg
+		}
 	}
-	if (strcmp(bin_op, "00") == 0) {
-		handle_put_operand(operand);
-	}
-	if (strcmp(bin_op, "11") == 0) {
-		handle_reg_operand(operand, is_source);
-	}
-	if (strcmp(bin_op, "01") == 0) {
-		handle_lable_operand(operand);
-	}
+
+	return "test";
 }
 
-void handle_struct_operand(char* operand) {
-	char* struct_lable = strtok(operand, ".");
-	char* num = strtok(NULL, ".");
-	IC++;
-	I_Array[IC] = struct_lable;
-	if (num[0] < '1' || num[0] > '2') {
-		write_error_to_file("The struct places has only 1 and 2"); // Deliver line number
-	}
-	IC++;
-	I_Array[IC] = (num[0] == '1') ? "0000000001" : "0000000010";
+void handle_des_op(char* destination) {
+	printf("%s", destination);
 }
 
-void handle_put_operand(char* operand) {
-	char* num = memmove(operand, operand + 1, strlen(operand));
-	bool is_negative = (num[0] == '-');
-	if (is_negative) {
-		memmove(num, num + 1, strlen(num));
-	}
-	IC++;
-	if (is_valid_number(num)) {
-		I_Array[IC] = convert_dec_to_bin(atoi(num), is_negative);
-	}
-	else {
-		write_error_to_file("Number is not valid");
-		I_Array[IC] = "error";
-	}
-}
-
-void handle_reg_operand(char* operand, bool is_source) {
-	char* binary_reg = is_source ? concat(get_binary_reg(operand), "0000") : concat("0000", get_binary_reg(operand));
-	IC++;
-	I_Array[IC] = concat(binary_reg, "00");
-}
-
-void handle_lable_operand(char* operand) {
-	IC++;
-	I_Array[IC] = operand;
-}
-
-//TODO 4 - Separate this func to action and bool info cause the name is missleading.
+//char* get_binary_word(char* word) {
+//	if (word[0] == '.') {
+//		get_binary_put_action(word);
+//	}
+//}
+//
+//
 bool is_put_action(char* word, char* line) {
 	char last_letter = word[strlen(word) - 1];
 	bool is_put = false;
@@ -322,11 +284,11 @@ void add_data_to_data(char* line) {
 			memmove(num, num + 1, strlen(num));
 		}
 		if (is_valid_number(num)) {
-			D_Array[DC] = convert_dec_to_bin(atoi(num), is_negative);
+			strcpy(D_Array[DC], convert_dec_to_bin(atoi(num), is_negative));
 		}
 		else {
 			write_error_to_file(("%s is not valid number", num)); // TODO 5 - Add pointer to error file
-			D_Array[DC] = "error";
+			strcpy(D_Array[DC], "error");
 		}
 
 		num = strtok(NULL, " ,/t/n");
@@ -344,29 +306,22 @@ void add_struct_to_data(char* line) {
 	if (is_negative) {
 		memmove(num, num + 1, strlen(num));
 	}
-	D_Array[DC] = convert_dec_to_bin(atoi(num), is_negative);
+	strcpy(D_Array[DC], convert_dec_to_bin(atoi(num), is_negative));
 	for (int i = 0; i < strlen(str); i++) {
 		DC++;
-		D_Array[DC] = convert_dec_to_bin(str[i], false); // we send here a char as integer
+		strcpy(D_Array[DC], convert_dec_to_bin(str[i], false)); // we send here a char as integer
 	}
 	DC++;
-	D_Array[DC] = "0000000000";
+	strcpy(D_Array[DC], "0000000000");
 }
 
 void add_string_to_data(char* line) {
-	char* str;
-	bool flag = false;
 	for (int i = 0; i < strlen(line); i++) {
-		if (line[i] == '\"') {
-			flag = !flag;
-		}
-		if (flag) {
-			DC++;
-			D_Array[DC] = convert_dec_to_bin(line[i], false); // we send here a char as integer
-		}
+		DC++;
+		strcpy(D_Array[DC], convert_dec_to_bin(line[i], false)); // we send here a char as integer
 	}
 	DC++;
-	D_Array[DC] = "0000000000";
+	strcpy(D_Array[DC], "0000000000");
 }
 
 lablePtr add_lable_to_table(int line_counter, char* lable, lablePtr head) {
