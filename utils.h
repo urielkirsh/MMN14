@@ -25,4 +25,6 @@ bool is_saved_words(char*);
 bool is_entry(char*);
 bool is_extern(char*);
 char* get_binary_reg(char*);
+char* convert_dec_to_bin10(int, bool);
+bool is_letter(int);
 

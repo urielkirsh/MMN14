@@ -39,8 +39,10 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 
 	while (fgets(original_line, LINE_LENGTH, file_ptr) != NULL) {
 
-		if (original_line[0] == ';') continue; // Ignore comment out lines
-
+		if (original_line[0] == ';') {
+			fprintf(new_fp, "%s", original_line);
+			continue; // Ignore comment out lines
+		}
 		strcpy(copied_line, original_line);
 
 		if (macro) {
@@ -64,7 +66,7 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 			macro = 1;
 		}
 		else {
-			if (copied_line[strlen(first_word) - 1] == ':' || is_opcode(first_word)) {
+			if (copied_line[strlen(first_word) - 1] == ':' || is_opcode(first_word) || is_entry(first_word) || is_extern(first_word) ){
 				strncpy(str_to_put, original_line, LINE_LENGTH);
 			}
 			else {

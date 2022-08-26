@@ -21,7 +21,7 @@ void error_handler(char* str) {
 }
 
 void write_error_to_file(char* error) {
-	FILE* err_file_ptr = fopen("error_file", "a+");
+	FILE* err_file_ptr = fopen("error_file.txt", "a+");
 	fprintf(err_file_ptr, "%s\n", error);
 	fclose(err_file_ptr);
 }
@@ -209,11 +209,11 @@ bool is_valid_number(char* num) {
 }
 
 bool is_entry(char* first_word) {
-	return (first_word == ".entry") ? true : false;
+	return (strcmp(first_word, ".entry") == 0) ? true : false;
 }
 
 bool is_extern(char* first_word) {
-	return (first_word == ".extern") ? true : false;
+	return (strcmp(first_word,".extern") == 0) ? true : false;
 }
 
 char* get_binary_reg(char* reg) {
@@ -227,3 +227,32 @@ char* get_binary_reg(char* reg) {
 	return BINARY_OPCODE[dec_num]; // Use the binary opcode cause its the same (4 digits)
 }
 
+char* convert_dec_to_bin10(int dec, bool negative) {
+
+	// array to store binary number
+	char binaryNum[10] = { '0','0','0','0','0','0','0','0','0','0' };
+	int x = sizeof(binaryNum) / sizeof(binaryNum[0]);
+
+	// counter for binary array
+	int i = x - 1;
+	while (dec > 0) {
+		// storing remainder in binary array
+		binaryNum[i] = (dec % 2) + '0';
+		dec = dec / 2;
+		i--;
+	}
+	if (negative) {
+		for (i = 0; i < 10; i++) {
+			binaryNum[i] = (binaryNum[i] == '0') ? '1' : '0';
+		}
+	}
+	char binStr[11];
+	memcpy(binStr, binaryNum, x);
+	binStr[x] = '\0';
+	char* bin_str_to_return = binStr;
+	return bin_str_to_return;
+}
+
+bool is_letter(int char_as_num) {
+	return ((65 <= char_as_num && char_as_num <= 90) || (97 <= char_as_num && char_as_num <= 122));;
+}
