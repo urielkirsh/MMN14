@@ -307,3 +307,17 @@ char* get_num_of_op_by_operands_by_line(char* line) {
 	}
 	return num_of_op;
 }
+
+bool is_valid_file_name(char* file_name) {
+	int i;
+	bool flag = false;
+	for (i = 0; i < strlen(file_name); i++) {
+		if (file_name[i] == '.' && (i+3) == strlen(file_name)) {
+			if (file_name[i + 1] == 'a' && file_name[i + 2] == 'm') {
+				flag = true;
+				break;
+			}
+		}
+	}
+	return flag;
+}

@@ -104,7 +104,7 @@ char* action_converter(char* file_name) {
 		exit(0);
 	}
 
-	char* new_file_name = replace_file_name_ending(file_name, "_Binary.txt"); // TODO 5 - For debug purposes should be .am
+	char* new_file_name = replace_file_name_ending(file_name, ".ob"); // TODO 5 - For debug purposes should be .am
 	FILE* new_fp = fopen(new_file_name, "wt");
 	isFilePtrNullish(new_fp); // TODO 3 - Rename
 
@@ -180,13 +180,13 @@ bool update_all_missing_parts(lablePtr lable_head, externPtr extern_head, entryP
 
 	// TODO 4 - Move all the entry/extern writing to a proper function
 	if (extern_head) {
-		char* new_file_name = replace_file_name_ending(file_name, "_EXT.txt");
+		char* new_file_name = replace_file_name_ending(file_name, ".ext");
 		extern_fp = fopen(new_file_name, "w+");
 		isFilePtrNullish(extern_fp);
 	}
 
 	if (entry_head) {
-		char* new_file_name = replace_file_name_ending(file_name, "_ENT.txt");
+		char* new_file_name = replace_file_name_ending(file_name, ".ent");
 		entry_fp = fopen(new_file_name, "w+");
 		isFilePtrNullish(entry_fp);
 	}

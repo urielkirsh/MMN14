@@ -15,11 +15,16 @@ int main(int argc, char* argv[]) // argc = num of strings (file names), argv = t
 	if (argc < 0) error_handler("\nno file name\n");
 	int i;
 	char* file_name_to_render;
-	for (i = 1; i < 2; i++) {/*argc*/
-		// TODO 5 - Create array of pointers to the new files
-		char* file_name = strdup("./file_test.txt");
-		file_name_to_render = create_spread_macro_file(file_name); // TODO 5 - How many files will be created here? /*argv[i]*/
-		file_name_to_render = action_converter(file_name_to_render); // First run
+	// Creates files (entry extern error...) for each file 
+	for (i = 1; i < 2/*argc*/; i++) {
+		char* file_name = strdup("jdhk.am"); //argv[i]
+		if (!is_valid_file_name(file_name)) {
+			char error[100] = "File name sould include .am. Current file name: ";
+			strcat(error, file_name);
+			error_handler(error);
+		}
+		file_name_to_render = create_spread_macro_file(file_name);
+		action_converter(file_name_to_render); // Convert to 32 base and hande all the writing process
 		free(file_name);
 	}
 

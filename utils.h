@@ -28,4 +28,5 @@ char* get_binary_reg(char*);
 char* convert_dec_to_bin10(int, bool);
 bool is_letter(int);
 char* get_num_of_op_by_operands_by_line(char*);
+bool is_valid_file_name(char*);
 

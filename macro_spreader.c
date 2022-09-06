@@ -27,7 +27,7 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 {
 	Macro* head = NULL;
 	Macro* macro_node = NULL;
-	char* new_file_name = replace_file_name_ending(file_name, "_AM.txt"); // TODO 5 - For debugpurposes should be .am 
+	char* new_file_name = replace_file_name_ending(file_name, ".am");
 	FILE* new_fp = fopen(new_file_name, "a+");
 	isFilePtrNullish(new_fp);
 	int macro = 0;
@@ -116,7 +116,7 @@ char* get_macro(char* name, Macro* head) {
 	}
 
 	if (!temp_head) {
-		error_handler("Syntax error: ");
+		error_handler("Syntax error!");
 	}
 
 	return temp_head->macro_data;
