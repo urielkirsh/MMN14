@@ -8,55 +8,24 @@
 #include "./utils/static_data.h"
 #include "utils/index.h"
 #include "./utils.h"
+#include "action_converter_linked_list_helper.h"
+#include "action_converter_helper.h"
 
 #define LINE_LENGTH 80
-typedef struct lable_node *lablePtr;
-typedef struct lable_node {
-	int line;
-	char name[10];
-	lablePtr next;
-} lable;
 
-typedef struct entry_node* entryPtr;
-typedef struct entry_node {
-	int line;
-	char name[10];
-	entryPtr next;
-} entry;
-
-typedef struct extern_node* externPtr;
-typedef struct extern_node {
-	int line;
-	char name[10];
-	externPtr next;
-} external;
-
-lablePtr add_lable_to_table(int, char*, lablePtr);
-lablePtr add_front(lablePtr, lablePtr);
-lablePtr create_new_lable(int, char*);
-
-entryPtr add_entry_to_table(int, char*, entryPtr);
-entryPtr add_front_entry(entryPtr, entryPtr);
-entryPtr create_new_entry(int, char*);
-
-externPtr add_extern_to_table(int, char*, externPtr);
-externPtr add_front_extern(externPtr, externPtr);
-externPtr create_new_extern(int, char*);
-
-int convert_to_binary_actions(char*, FILE*, opPtr);
-bool update_all_missing_parts(lablePtr, externPtr, entryPtr);
+int convert_to_binary_actions(char*, opPtr);
+bool update_all_missing_parts(lablePtr, externPtr, entryPtr, char*);
 char* action_converter(char*);
 char* get_ARE_bin(char* word, externPtr, entryPtr, lablePtr);
-void add_line_to_entry_or_extern(char*, int, externPtr, entryPtr, char*);
+externPtr add_line_to_extern(char*, int, externPtr, lablePtr);
+entryPtr add_line_to_entry(char*, int, entryPtr, lablePtr);
 
 bool is_put_action(char*, char*);
 void add_data_to_data(char*);
 void add_string_to_data(char*);
 void add_struct_to_data(char*);
 
-char* get_binary_opcode(char*, opPtr);
-char* get_binary_operand(char*);
-char* build_binary_word(char*, char*, char*, char*);
+
 void handle_op(char*, char*, bool is_source);
 void handle_reg_operand(char* operand, bool is_source);
 void handle_struct_operand(char* operand);
@@ -69,14 +38,12 @@ int DC = 0;
 char I_Array[256][11];
 char D_Array[256][11];
 
-
+// TODO 4 - create macro to free lists
 char* action_converter(char* file_name) {
-	FILE* file_ptr = fopen(file_name, "a+");
-	char* new_file_name = replace_file_name_ending(file_name, "_Binary.txt"); // TODO 5 - For debug purposes should be .am
-	FILE* new_fp = fopen(new_file_name, "wt");
-	isFilePtrNullish(new_fp); // TODO 3 - Rename
-	opPtr opcode_header = init_op_code_list();
 
+	FILE* file_ptr = fopen(file_name, "a+");
+	
+	opPtr opcode_header = init_op_code_list();
 	char original_line[LINE_LENGTH];
 	char copied_line[LINE_LENGTH];
 	char* first_word;
@@ -109,7 +76,7 @@ char* action_converter(char* file_name) {
 
 		is_lable_word = is_lable(first_word);
 		if (is_inside_of_lable && !is_lable_word) {
-			num_of_lines += convert_to_binary_actions(original_line, new_fp, opcode_header);
+			num_of_lines += convert_to_binary_actions(original_line, opcode_header);
 			continue;
 		}
 
@@ -120,129 +87,203 @@ char* action_converter(char* file_name) {
 			if (line_counter == 100) {
 				line_counter++;
 			}
-			num_of_lines += convert_to_binary_actions(original_line, new_fp, opcode_header);
+			num_of_lines += convert_to_binary_actions(original_line, opcode_header);
 			is_inside_of_lable = true;
 		}
 		else {
 			bool is_put = is_put_action(first_word, copied_line);
 			if (!is_put) {
-				write_error_to_file("Unknown line format");
+				error_handler("Unknown line format");
 			}
 		}
 	}
 
 	
-	bool is_errors = update_all_missing_parts(head, external_header, entry_header);
+	bool is_errors = update_all_missing_parts(head, external_header, entry_header, file_name);
 	if (is_errors) {
 		exit(0);
 	}
 
+	char* new_file_name = replace_file_name_ending(file_name, "_Binary.txt"); // TODO 5 - For debug purposes should be .am
+	FILE* new_fp = fopen(new_file_name, "wt");
+	isFilePtrNullish(new_fp); // TODO 3 - Rename
 
+	char bin_IC[3]; 
+	strcpy(bin_IC, convert_dec_to_32b(IC+1, "NULL", 10));
+	char bin_DC[3];
+	strcpy(bin_DC, convert_dec_to_32b(DC, "NULL", 10));
+	fprintf(new_fp, "%c%c%c%c%c%c", bin_IC[0], bin_IC[1], ' ', bin_DC[0], bin_DC[1], '\n');
+	
+	char bin32[3];
+	char binLine[3];
 	int i = 0;
-	printf("\n I_Array \n");
+	int line;
+
 	while (strcmp(I_Array[i], "") != 0) {
-		printf("\n %s \n", I_Array[i]);
+		line = i + 100;
+		strcpy(binLine, convert_dec_to_32b(line, "NULL", 10));
+		strcpy(bin32, convert_dec_to_32b(-1, I_Array[i], 10));
 		i++;
+		fprintf(new_fp, "%c%c%c%c%c%c", binLine[0], binLine[1], '\t', bin32[0], bin32[1], '\n');
 	}
+	
 	i = 0;
-	printf("\n D_Array \n");
 	while (strcmp(D_Array[i], "") != 0) {
-		printf("\n %s \n", D_Array[i]);
+		strcpy(bin32, convert_dec_to_32b(-1, D_Array[i], 10));
+		line = i + 101 + IC;
+		strcpy(binLine, convert_dec_to_32b(line, "NULL", 10));
+		fprintf(new_fp, "%c%c%c%c%c%c", binLine[0], binLine[1], '\t', bin32[0], bin32[1], '\n');
 		i++;
 	}
 
-	printf("\n Lables_Table \n");
-	while (head != NULL) {
-		printf("\n %s - %d \n", head->name, head->line);
-		head = head->next;
-	}
-
-	printf("\n Extern_Table \n");
-	while (external_header != NULL) {
-		printf("\n %s - %d \n", external_header->name, external_header->line);
-		external_header = external_header->next;
-	}
-
-	printf("\n Entry_Table \n");
-	while (entry_header != NULL) {
-		printf("\n %s - %d \n", entry_header->name, entry_header->line);
-		entry_header = entry_header->next;
+	if (new_fp) {
+		fclose(new_fp);
 	}
 
 	return "test";
 }
 
-bool update_all_missing_parts(lablePtr lable_head, externPtr extern_head, entryPtr entry_head) {
+bool update_all_missing_parts(lablePtr lable_head, externPtr extern_head, entryPtr entry_head, char* file_name) {
+	FILE* entry_fp;
+	FILE* extern_fp;
 	int line;
 	int i = 0;
+	int line_from_lable_table;
 	char* ARE;
 	char* bin_line;
+	char lable[10]; // Assuming that the lable is not bigger than 10 chars
+	char entry_bin32[3];
+	char extern_bin32[3];
+
 
 	while (strcmp(I_Array[i], "") != 0) {
 		if ( is_letter(I_Array[i][0]) ) {
+			if (strcmp(I_Array[i], "error") == 0) {
+				return true;
+			}
+			strcpy(lable, I_Array[i]);
 			line = get_line_of_lable(I_Array[i], lable_head);
 			ARE = get_ARE_bin(I_Array[i], extern_head, entry_head, lable_head); 
 			bin_line = convert_dec_to_bin(line, false);
 			strcat(bin_line, ARE);
-			add_line_to_entry_or_extern(I_Array[i], (i+100), extern_head, entry_head, ARE, lable_head);
 			memcpy(I_Array[i], bin_line, strlen(bin_line));
 
+			if (strcmp(ARE, "01") == 0) {
+				extern_head = add_line_to_extern(lable, (i+100), extern_head, lable_head);
+			}
+			if (strcmp(ARE, "10") == 0) {
+				entry_head = add_line_to_entry(lable, (i+100), entry_head, lable_head);
+			}
 		}
 		i++;
 	}
 
-	while (extern_head != NULL && entry_head != NULL) {
+	// TODO 4 - Move all the entry/extern writing to a proper function
+	if (extern_head) {
+		char* new_file_name = replace_file_name_ending(file_name, "_EXT.txt");
+		extern_fp = fopen(new_file_name, "w+");
+		isFilePtrNullish(extern_fp);
+	}
 
-		if (entry_head->line == -1 && extern_head->line == -1) {
-			write_error_to_file("Could Not find the entry lable line");
+	if (entry_head) {
+		char* new_file_name = replace_file_name_ending(file_name, "_ENT.txt");
+		entry_fp = fopen(new_file_name, "w+");
+		isFilePtrNullish(entry_fp);
+	}
+
+	while (extern_head != NULL || entry_head != NULL) {
+
+
+		if (entry_head) {
+			if (entry_head->line == -1) {
+				line_from_lable_table = get_line_of_lable(entry_head->name, lable_head);
+				entry_head->line = line_from_lable_table ? line_from_lable_table : -1;
+			}
+
+			if (entry_head->line != -1) {
+				strcpy(entry_bin32, convert_dec_to_32b(entry_head->line, "NULL", 10));
+				fprintf(entry_fp, "%s%c%c%c%c", entry_head->name, '\t', entry_bin32[0], entry_bin32[1], '\n');
+			}
+		}
+
+		if (extern_head) {
+			if (extern_head->line == -1) {
+				line_from_lable_table = get_line_of_lable(extern_head->name, lable_head);
+				extern_head->line = line_from_lable_table ? line_from_lable_table : -1;
+			}
+			if (extern_head->line != -1) {
+				strcpy(extern_bin32, convert_dec_to_32b(extern_head->line, "NULL", 10));
+				fprintf(extern_fp, "%s%c%c%c%c", extern_head->name, '\t', extern_bin32[0], extern_bin32[1], '\n');
+
+			}
+		}
+
+		if ((entry_head && entry_head->line == -1) || (extern_head && extern_head->line == -1)) {
+			error_handler("Could Not find the entry/extern lable line");
 			return true;
 		}
 
 		extern_head = (extern_head == NULL) ? NULL : extern_head->next;
 		entry_head = (entry_head == NULL) ? NULL : entry_head->next;
+		
+		if (entry_head == NULL) { // Finish writing to the file
+			fclose(entry_fp);
+		}
+
+		if (extern_head == NULL) { // Finish writing to the file
+			fclose(extern_fp);
+		}
 	}
+
 
 	return false;
 }
 
 
-void add_line_to_entry_or_extern(char* lable, int line, externPtr extern_head, entryPtr entry_head, char* ARE, lablePtr lable_head) {
-	entryPtr temp_entry = entry_head;
+externPtr add_line_to_extern(char* lable, int line, externPtr extern_head, lablePtr lable_head) {
+	
 	externPtr temp_extern = extern_head;
+
+	while (extern_head != NULL) {
+		if (strcmp(lable, extern_head->name) == 0) {
+			if (extern_head->line != -1) {
+				temp_extern = add_extern_to_table(line, extern_head->name, temp_extern);
+				break;
+			}
+			else {
+				extern_head->line = line;
+				break;
+			}
+		}
+		extern_head = extern_head->next;
+	}
+	return temp_extern;
+}
+
+entryPtr add_line_to_entry(char* lable, int line, entryPtr entry_head, lablePtr lable_head) {
+	
+	entryPtr temp_entry = entry_head;
 	int line_from_lable_table;
-	if (strcmp(ARE, "01") == 0) {
-		while (extern_head != NULL) {
-			if (strcmp(lable, extern_head->name) == 0) {
-				if (extern_head->line != -1) {
-					extern_head = add_extern_to_table(line, extern_head->name, temp_extern);
-					break;
-				}
-				else {
-					extern_head->line = line;
-					break;
-				}
+	
+	while (entry_head != NULL) {
+		if (strcmp(lable, entry_head->name) == 0) {
+			if (entry_head->line != -1) {
+				temp_entry = add_entry_to_table(line, entry_head->name, temp_entry);
+				break;
 			}
-			extern_head = extern_head->next;
-		}
-	}
-
-	if (strcmp(ARE, "10") == 0) {
-		while (entry_head != NULL) {
-			if (strcmp(lable, entry_head->name) == 0) {
-				line_from_lable_table = get_line_of_lable(entry_head->name, lable_head);
-				if ( (entry_head->line != -1) && (line_from_lable_table == NULL) ) {
-					entry_head = add_entry_to_table(line, entry_head->name, temp_entry);
-					break;
-				}
-				else {
-					entry_head->line = (entry_head->line != -1) ? line : line_from_lable_table;
-					break;
-				}
+			else {
+				entry_head->line = line;
 			}
-
-			entry_head = entry_head->next;
 		}
+		else {
+			line_from_lable_table = get_line_of_lable(entry_head->name, lable_head);
+			entry_head->line = line_from_lable_table;
+			break;
+		}
+
+		entry_head = entry_head->next;
 	}
+	return temp_entry;
 }
 
 int get_line_of_lable(char* name, lablePtr lable_head) {
@@ -257,12 +298,12 @@ int get_line_of_lable(char* name, lablePtr lable_head) {
 }
 
 char* get_ARE_bin(char* word, externPtr extern_head, entryPtr entry_head, lablePtr lable_head) {
-	while (extern_head != NULL && entry_head != NULL) {
+	while (extern_head != NULL || entry_head != NULL || lable_head != NULL) {
 	
-		if (strcmp(extern_head->name, word) == 0) {
+		if (extern_head && strcmp(extern_head->name, word) == 0) {
 			return "01";
 		}
-		if (strcmp(entry_head->name, word) == 0 || strcmp(lable_head->name, word) == 0) {
+		if (( entry_head && strcmp(entry_head->name, word) == 0 ) || (lable_head && strcmp(lable_head->name, word) == 0)) {
 			return "10";
 		}
 		extern_head = (extern_head == NULL) ? NULL : extern_head->next;
@@ -272,18 +313,20 @@ char* get_ARE_bin(char* word, externPtr extern_head, entryPtr entry_head, lableP
 	return "00";
 }
 
-int convert_to_binary_actions(char* line, FILE* new_fp, opPtr opcode_header) {
+int convert_to_binary_actions(char* line, opPtr opcode_header) {
 	char copied_line[LINE_LENGTH];
 	strcpy(copied_line, line);
 	int line_of_binary_actions = (IC + DC); // Count the binary lines converted from the original line
 	char* operation = strtok(line, " \t\n"); // Get the op code
 	if (operation[strlen(operation) - 1] == ':') { // If this is the first time skip the lable
-		operation = strtok(NULL, " ");
+		operation = strtok(NULL, " \t\n");
 	}
-	if (operation[0] == '.' && is_put_action(operation, copied_line)) { // If it is it puts the data (the name 'is_put_action' is misleading)
+	if (operation[0] == '.' && is_put_action(operation, copied_line)) { // TODO 4 - Separate. The method also puts the data (the name 'is_put_action' is misleading)
 		return (IC + DC) - line_of_binary_actions;
 	}
+
 	int num_of_op = get_num_of_op_by_operation(operation);
+
 	char* source_op;
 	char* destination_op;
 	char* binary_source_op = "00";
@@ -317,41 +360,15 @@ int convert_to_binary_actions(char* line, FILE* new_fp, opPtr opcode_header) {
 	else {
 		strcpy(I_Array[IC], build_binary_word(binary_opcode, binary_source_op, binary_destination_op, "00")); // Binary words, the ARE data
 	}
+
+	int current_num_of_op = get_num_of_op_by_operands_by_line(copied_line);
+	if (num_of_op != current_num_of_op) {
+		char error[50] = "Too many operands for operation ";
+		strcat(error, operation);
+		write_error_to_file(error, IC);
+	}
 	
 	return (IC + DC) - line_of_binary_actions;
-}
-
-char* build_binary_word(char* op, char* source, char* des, char* A_R_E) { // TODO 3 - Find better solution
-	char* bin_word = op;
-	bin_word = concat(bin_word, source);
-	bin_word = concat(bin_word, des);
-	bin_word = concat(bin_word, A_R_E);
-	return bin_word;
-}
-
-char* get_binary_operand (char* source_op) {
-	if (source_op[0] == '#') { // Assuming that the op looks like this: #...rest
-		return "00";
-	}
-	if (source_op[strlen(source_op) - 2] == '.') { // Assuming that the op of struct looks like this: X.1 or X.2
-		return "10";
-	}
-	if (is_reg(source_op)) { // Checks if this is a register name
-		return "11";
-	}
-	return "01";
-}
-
-char* get_binary_opcode (char* operation, opPtr opcode_header) {
-	opPtr current = opcode_header;
-	while (current != NULL)
-	{
-		if (strcmp(current->opcode, operation) == 0) {
-			return current->bin;
-		}
-		current = current->next;
-	}
-	return "";
 }
 
 // Kind of factory pattern to choose what to do with the operand
@@ -377,7 +394,7 @@ void handle_struct_operand(char* operand) {
 	IC++;
 	strcpy(I_Array[IC], struct_lable);
 	if (num[0] < '1' || num[0] > '2') {
-		write_error_to_file("The struct places has only 1 and 2"); // Deliver line number
+		write_error_to_file("The struct places has only 1 and 2", IC); // Deliver line number
 	}
 	IC++;
 	strcpy(I_Array[IC], (num[0] == '1') ? "0000000100" : "0000001000");
@@ -391,10 +408,10 @@ void handle_put_operand(char* operand) {
 	}
 	IC++;
 	if (is_valid_number(num)) {
-		strcpy(I_Array[IC], convert_dec_to_bin10(atoi(num), is_negative));
+		strcpy(I_Array[IC], strcat(convert_dec_to_bin(atoi(num), is_negative), "00"));
 	}
 	else {
-		write_error_to_file("Number is not valid");
+		write_error_to_file("Number is not valid", IC);
 		strcpy(I_Array[IC], "error");
 	}
 }
@@ -433,7 +450,7 @@ bool is_put_action(char* word, char* line) {
 			break;
 
 		default:
-			write_error_to_file("No match for the data");
+			write_error_to_file("No match for the data", DC+IC);
 			strcpy(D_Array[DC], "error");
 			is_put = false;
 	}
@@ -461,14 +478,14 @@ void add_data_to_data(char* line) {
 			strcpy(D_Array[DC], convert_dec_to_bin10(atoi(num), is_negative));
 		}
 		else {
-			write_error_to_file(("%s is not valid number", num)); // TODO 5 - Add pointer to error file
+			write_error_to_file(("%s is not valid number", num), DC + IC); // TODO 5 - Add pointer to error file
 			strcpy(D_Array[DC], "error");
 		}
 		DC++;
 		num = strtok(NULL, " ,/t/n");
 	}
 	if (counter >= num_counter) {
-		error_handler("Too many (,) symbols (.data op)");
+		write_error_to_file("Too many (,) symbols (.data op)", DC + IC);
 	}
 }
 
@@ -486,13 +503,13 @@ void add_struct_to_data(char* line) {
 	strcpy(D_Array[DC], convert_dec_to_bin10(atoi(num), is_negative));
 	bool flag = false;
 	for (int i = 0; i < strlen(str); i++) {
-		if (line[i] == '\"') {
+		if (str[i] == '\"') {
 			flag = !flag;
 			if (DC > 0 && flag) {
 				DC++;
 			}
 		}
-		if (flag) {
+		if (flag && (str[i] != '\"')) {
 			strcpy(D_Array[DC], convert_dec_to_bin10(str[i], false)); // we send here a char as integer
 			DC++;
 		}
@@ -515,79 +532,4 @@ void add_string_to_data(char* line) {
 	}
 	strcpy(D_Array[DC], "0000000000");
 	DC++;
-}
-
-// TODO 5 - Check for double lable names
-lablePtr add_lable_to_table(int line_counter, char* lable, lablePtr head) {
-	lable[strlen(lable)-1] = '\0';
-	lablePtr newLable = create_new_lable(line_counter, lable);
-	head = add_front(head, newLable);
-	printf("Create table for lables");
-	return head;
-}
-
-lablePtr add_front(lablePtr head, lablePtr newLable) {
-	newLable->next = head;
-	return newLable;
-}
-
-lablePtr create_new_lable(int line, char* lable_name) {
-	lablePtr new_lable = (lablePtr)malloc(sizeof(lable));
-	if (new_lable != NULL) {
-		strcpy(new_lable->name,lable_name);
-		new_lable->line = line;
-		new_lable->next = NULL;
-	}
-	else {
-		error_handler("There was an allocating problem");
-	}
-	return new_lable;
-}
-
-entryPtr add_entry_to_table(int line_counter, char* entry_lable, entryPtr head) {
-	entryPtr new_entry_lable = create_new_entry(line_counter, entry_lable);
-	head = add_front_entry(head, new_entry_lable);
-	return head;
-}
-
-entryPtr add_front_entry(entryPtr head, entryPtr new_entry_lable) {
-	new_entry_lable->next = head;
-	return new_entry_lable;
-}
-
-entryPtr create_new_entry(int line, char* lable_name) {
-	entryPtr new_entry_lable = (entryPtr)malloc(sizeof(entry));
-	if (new_entry_lable != NULL) {
-		strcpy(new_entry_lable->name, lable_name);
-		new_entry_lable->line = line;
-		new_entry_lable->next = NULL;
-	}
-	else {
-		error_handler("There was an allocating problem");
-	}
-	return new_entry_lable;
-}
-
-externPtr add_extern_to_table(int line_counter, char* extern_lable, externPtr head) {
-	externPtr new_extern_lable = create_new_extern(line_counter, extern_lable);
-	head = add_front_extern(new_extern_lable, head);
-	return head;
-}
-
-externPtr add_front_extern(externPtr new_extern_lable, externPtr head) {
-	new_extern_lable->next = head;
-	return new_extern_lable;
-}
-
-externPtr create_new_extern(int line, char* lable_name) {
-	externPtr new_extern_lable = (externPtr)malloc(sizeof(external));
-	if (new_extern_lable != NULL) {
-		strcpy(new_extern_lable->name, lable_name);
-		new_extern_lable->line = line;
-		new_extern_lable->next = NULL;
-	}
-	else {
-		error_handler("There was an allocating problem");
-	}
-	return new_extern_lable;
 }

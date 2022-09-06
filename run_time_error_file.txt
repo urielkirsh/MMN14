@@ -1,0 +1,6 @@
+10	Number is not valid
+10	Number is not valid
+10	Number is not valid
+12	Too many operands for operation sub
+31	Too many (,) symbols (.data op)
+32	Too many (,) symbols (.data op)

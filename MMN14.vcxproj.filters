@@ -30,6 +30,12 @@
     <ClCompile Include="init.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="action_converter_linked_list_helper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="action_converter_helper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\index.h">
@@ -42,6 +48,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="macro_spreader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="action_converter_linked_list_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="action_converter_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

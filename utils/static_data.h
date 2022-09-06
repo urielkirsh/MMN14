@@ -1,3 +1,6 @@
+#ifndef HEADERFILE_H
+#define HEADERFILE_H
+
 #include <stdio.h>
 #include <math.h>
 #define BASE_NUMBERS (const char[32]){'!','@','#','$','%','^','&','*','<','>','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v'}
@@ -18,3 +21,5 @@ typedef struct node {
 
 
 opPtr init_op_code_list();
+
+#endif

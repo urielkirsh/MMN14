@@ -39,9 +39,9 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 
 	while (fgets(original_line, LINE_LENGTH, file_ptr) != NULL) {
 
-		if (original_line[0] == ';') {
-			fprintf(new_fp, "%s", original_line);
-			continue; // Ignore comment out lines
+		if (original_line[0] == ';' || strcmp(original_line, "\n") == 0 || strcmp(original_line, "\t") == 0) {
+			//fprintf(new_fp, "%s", original_line);
+			continue; // Ignore comment out and empty lines
 		}
 		strcpy(copied_line, original_line);
 
@@ -58,6 +58,10 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 
 		first_word = strtok(copied_line, " \n\t");
 
+		if (!first_word) {
+			continue; // means that is an empty line
+		}
+
 
 		if (strcmp(first_word, "macro") == 0) {
 			macro_name = strtok(NULL, " \n");
@@ -66,7 +70,7 @@ char* spread_macro(FILE* file_ptr, char* file_name)
 			macro = 1;
 		}
 		else {
-			if (copied_line[strlen(first_word) - 1] == ':' || is_opcode(first_word) || is_entry(first_word) || is_extern(first_word) ){
+			if (copied_line[strlen(first_word) - 1] == ':' || is_opcode(first_word) || is_entry(first_word) || is_extern(first_word)){
 				strncpy(str_to_put, original_line, LINE_LENGTH);
 			}
 			else {

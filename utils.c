@@ -16,13 +16,16 @@ void isFilePtrNullish(FILE* file_pt) {
 }
 
 void error_handler(char* str) {
-	printf("%s\n", str);
+	FILE* err_file_ptr = fopen("critical_system_error_log_file.txt", "a+");
+	fprintf(err_file_ptr, "%s\n", str);
+	fclose(err_file_ptr);
 	exit(0);
 }
 
-void write_error_to_file(char* error) {
-	FILE* err_file_ptr = fopen("error_file.txt", "a+");
-	fprintf(err_file_ptr, "%s\n", error);
+void write_error_to_file(char* error, int line) {
+	FILE* err_file_ptr = fopen("run_time_error_file.txt", "a+");
+	isFilePtrNullish(err_file_ptr);
+	fprintf(err_file_ptr, "%d\t%s\n", line, error);
 	fclose(err_file_ptr);
 }
 
@@ -50,7 +53,7 @@ bool is_lable(char* word) {
 }
 
 char* convert_dec_to_bin(int dec, bool negative) {
-	
+	bool is_zero = (dec == 0);
 	// array to store binary number
 	char binaryNum[8] = {'0','0','0','0','0','0','0','0'};
 	int x = sizeof(binaryNum) / sizeof(binaryNum[0]);
@@ -63,9 +66,19 @@ char* convert_dec_to_bin(int dec, bool negative) {
 		dec = dec / 2;
 		i--;
 	}
-	if (negative) {
+	if (negative && !is_zero) {
 		for (i = 0; i < 8; i++) {
 			binaryNum[i] = (binaryNum[i] == '0') ? '1' : '0';
+		}
+
+		for (i = 7; i >= 0; i--) {
+			if (binaryNum[i] == '0') {
+				binaryNum[i] = '1';
+				break;
+			}
+			else {
+				binaryNum[i] = '0';
+			}
 		}
 	}
 	char binStr[9];
@@ -75,26 +88,38 @@ char* convert_dec_to_bin(int dec, bool negative) {
 	return bin_str_to_return;
 }
 // Convert from dec to 32b
-char* convert_dec_to_32b(char* bin, int base) {
-	if (strlen(bin) < base) {
-		printf("Not enough characters for 32b number");
-		exit(0);
-	}
+char* convert_dec_to_32b(int dec, char* bin, int base) {
+	
 	int string_length = 5;
 	int string_cutter = 4;
 	char* first_bin_str = (char*)malloc(sizeof(char) * (string_length+1));
 	char* second_bin_str = (char*)malloc(sizeof(char) * (string_length+1));
 
-	create_binary_string(first_bin_str, bin, 0, 0, 0, string_cutter); // Take the first part of the string (e.g "0000110000" -> "00001")
-	create_binary_string(second_bin_str, bin, string_length, 0, 0, base); // Take the second part of the string (e.g "0000110000" -> "10000")
+	char* binary;
+	if (strcmp(bin, "NULL") == 0) {
+		binary = convert_dec_to_bin10(dec, false);
+	}
+	else {
+		binary = bin;
+	}
+
+	if (strlen(binary) < base) {
+		printf("Not enough characters for 32b number");
+		exit(0);
+	}
+
+
+	create_binary_string(first_bin_str, binary, 0, 0, 0, string_cutter); // Take the first part of the string (e.g "0000110000" -> "00001")
+	create_binary_string(second_bin_str, binary, string_length, 0, 0, base); // Take the second part of the string (e.g "0000110000" -> "10000")
 
 	int first_bin = convert_bin_to_dec(atoi(first_bin_str));
 	int second_bin = convert_bin_to_dec(atoi(second_bin_str));
 	char first_32base = BASE_NUMBERS[first_bin];
 	char second_32base = BASE_NUMBERS[second_bin];
-	char base32_num[2];
+	char base32_num[3];
 	base32_num[0] = first_32base;
 	base32_num[1] = second_32base;
+	base32_num[2] = '\0';
 	free(first_bin_str);
 	free(second_bin_str);
 	return base32_num;
@@ -110,7 +135,7 @@ char* create_binary_string(char* str, char* bin, int i, int j, int flag, int len
 			j++;
 		}
 	}
-	str[len + 1] = '/0';
+	str[len + 1] = '\0';
 	return str;
 }
 
@@ -202,9 +227,10 @@ bool is_valid_number(char* num) {
 		}
 	}
 
-	if (f)
+	if (f) {
 		return false;
-	
+	}
+
 	return true;
 }
 
@@ -228,7 +254,7 @@ char* get_binary_reg(char* reg) {
 }
 
 char* convert_dec_to_bin10(int dec, bool negative) {
-
+	bool is_zero = (dec == 0);
 	// array to store binary number
 	char binaryNum[10] = { '0','0','0','0','0','0','0','0','0','0' };
 	int x = sizeof(binaryNum) / sizeof(binaryNum[0]);
@@ -241,9 +267,19 @@ char* convert_dec_to_bin10(int dec, bool negative) {
 		dec = dec / 2;
 		i--;
 	}
-	if (negative) {
+	if (negative && !is_zero) {
 		for (i = 0; i < 10; i++) {
 			binaryNum[i] = (binaryNum[i] == '0') ? '1' : '0';
+		}
+
+		for (i = 9; i >= 0; i--) {
+			if (binaryNum[i] == '0') {
+				binaryNum[i] = '1';
+				break;
+			}
+			else {
+				binaryNum[i] = '0';
+			}
 		}
 	}
 	char binStr[11];
@@ -255,4 +291,19 @@ char* convert_dec_to_bin10(int dec, bool negative) {
 
 bool is_letter(int char_as_num) {
 	return ((65 <= char_as_num && char_as_num <= 90) || (97 <= char_as_num && char_as_num <= 122));;
+}
+
+char* get_num_of_op_by_operands_by_line(char* line) {
+	char* operation = strtok(line, " \t\n"); // Get the op code
+	if (operation[strlen(operation) - 1] == ':') { // If this is the first time skip the lable
+		operation = strtok(NULL, " \t\n");
+	}
+	char* operands = strtok(NULL, "");
+	int num_of_op = 0;
+	char* op = strtok(operands, ", \t\n");
+	while (op != NULL) {
+		num_of_op++;
+		op = strtok(NULL, ", \t\n");
+	}
+	return num_of_op;
 }

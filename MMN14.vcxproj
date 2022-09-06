@@ -103,12 +103,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="action_converter.c" />
+    <ClCompile Include="action_converter_helper.c" />
+    <ClCompile Include="action_converter_linked_list_helper.c" />
     <ClCompile Include="init.c" />
     <ClCompile Include="macro_spreader.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="action_converter_helper.h" />
+    <ClInclude Include="action_converter_linked_list_helper.h" />
     <ClInclude Include="macro_spreader.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="utils\index.h" />
